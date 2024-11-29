@@ -1,0 +1,188 @@
+-- ClassicUILib.lua
+local ClassicUILib = {}
+
+-- Utility Function to Create Instances
+local function createInstance(className, properties)
+    local instance = Instance.new(className)
+    for prop, value in pairs(properties) do
+        instance[prop] = value
+    end
+    return instance
+end
+
+-- Create the Main Window
+function ClassicUILib:CreateWindow(title, size)
+    local gui = createInstance("ScreenGui", {
+        Name = title,
+        ResetOnSpawn = false,
+        Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui"),
+    })
+
+    local mainFrame = createInstance("Frame", {
+        Name = "MainFrame",
+        Size = size or UDim2.new(0, 400, 0, 300),
+        Position = UDim2.new(0.5, -200, 0.5, -150),
+        BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+        BorderSizePixel = 2,
+        Active = true,
+        Draggable = true,
+        Parent = gui,
+    })
+
+    local topBar = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 30),
+        BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+        BorderSizePixel = 0,
+        Parent = mainFrame,
+    })
+
+    createInstance("TextLabel", {
+        Size = UDim2.new(1, -60, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
+        BackgroundTransparency = 1,
+        Text = title,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.SourceSans,
+        TextSize = 18,
+        Parent = topBar,
+    })
+
+    local closeButton = createInstance("TextButton", {
+        Size = UDim2.new(0, 30, 1, 0),
+        Position = UDim2.new(1, -30, 0, 0),
+        BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+        Text = "X",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.SourceSans,
+        TextSize = 18,
+        Parent = topBar,
+    })
+
+    closeButton.MouseButton1Click:Connect(function()
+        gui:Destroy()
+    end)
+
+    return mainFrame
+end
+
+-- Components
+function ClassicUILib:CreateButton(parent, text, callback)
+    local button = createInstance("TextButton", {
+        Size = UDim2.new(0, 200, 0, 30),
+        BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+        Text = text,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.SourceSans,
+        TextSize = 18,
+        Parent = parent,
+    })
+
+    button.MouseButton1Click:Connect(callback)
+    return button
+end
+
+function ClassicUILib:CreateLabel(parent, text)
+    return createInstance("TextLabel", {
+        Size = UDim2.new(0, 200, 0, 30),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.SourceSans,
+        TextSize = 18,
+        Parent = parent,
+    })
+end
+
+function ClassicUILib:CreateSlider(parent, min, max, callback)
+    local sliderFrame = createInstance("Frame", {
+        Size = UDim2.new(0, 200, 0, 30),
+        BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+        Parent = parent,
+    })
+
+    local sliderButton = createInstance("TextButton", {
+        Size = UDim2.new(0, 10, 1, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        Text = "",
+        Parent = sliderFrame,
+    })
+
+    local dragging = false
+
+    sliderButton.MouseButton1Down:Connect(function()
+        dragging = true
+    end)
+
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    sliderFrame.MouseMoved:Connect(function(x, y)
+        if dragging then
+            local pos = math.clamp((x - sliderFrame.AbsolutePosition.X) / sliderFrame.AbsoluteSize.X, 0, 1)
+            sliderButton.Position = UDim2.new(pos, -5, 0, 0)
+            local value = math.floor((min + (max - min) * pos) + 0.5)
+            callback(value)
+        end
+    end)
+
+    return sliderFrame
+end
+
+function ClassicUILib:CreateDropdown(parent, text, options, callback)
+    local dropdownFrame = createInstance("Frame", {
+        Size = UDim2.new(0, 200, 0, 30),
+        BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+        Parent = parent,
+    })
+
+    local dropdownButton = createInstance("TextButton", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.SourceSans,
+        TextSize = 18,
+        Parent = dropdownFrame,
+    })
+
+    local dropdownList = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 0),
+        BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+        BorderSizePixel = 1,
+        Parent = dropdownFrame,
+    })
+
+    dropdownList.Visible = false
+
+    dropdownButton.MouseButton1Click:Connect(function()
+        dropdownList.Visible = not dropdownList.Visible
+    end)
+
+    for i, option in ipairs(options) do
+        local optionButton = createInstance("TextButton", {
+            Size = UDim2.new(1, 0, 0, 30),
+            Position = UDim2.new(0, 0, 0, (i - 1) * 30),
+            BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+            Text = option,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            Font = Enum.Font.SourceSans,
+            TextSize = 18,
+            Parent = dropdownList,
+        })
+
+        optionButton.MouseButton1Click:Connect(function()
+            dropdownButton.Text = text .. ": " .. option
+            callback(option)
+            dropdownList.Visible = false
+        end)
+    end
+
+    return dropdownFrame
+end
+
+return ClassicUILib
